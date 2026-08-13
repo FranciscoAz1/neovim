@@ -1,0 +1,32 @@
+-- Bootstrap lazy.nvim (plugin manager) and load everything in lua/plugins/
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+  local repo = "https://github.com/folke/lazy.nvim.git"
+  local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", repo, lazypath })
+  if vim.v.shell_error ~= 0 then
+    error("Failed to clone lazy.nvim:\n" .. out)
+  end
+end
+
+vim.opt.rtp:prepend(lazypath)
+
+require("lazy").setup({
+  spec = { { import = "plugins" } },
+  install = { colorscheme = { "tokyonight" } },
+  checker = { enabled = false }, -- don't background-poll for updates on a Pi
+  change_detection = { notify = false },
+  performance = {
+    rtp = {
+      -- Disable built-in plugins we don't need; small but free startup win
+      disabled_plugins = {
+        "gzip",
+        "tarPlugin",
+        "tohtml",
+        "tutor",
+        "zipPlugin",
+        "netrwPlugin",
+      },
+    },
+  },
+})
