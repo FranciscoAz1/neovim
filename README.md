@@ -2,15 +2,22 @@
 
 Leader key is **Space**. Press `<Space>` and pause — which-key shows what's available.
 
+**`<leader>?` opens a cheatsheet** covering splits, terminals and tmux. tmux
+shows the same page on `prefix ?`, so there is one place to look either way.
+
 ## Layout
 
 ```
 ~/.config/nvim/
-  init.lua                 options + keymaps + plugin bootstrap
-  lua/config/options.lua   editor settings, clipboard
-  lua/config/keymaps.lua   global keymaps
-  lua/config/lazy.lua      plugin manager bootstrap
-  lua/plugins/*.lua        one file per concern; add a file to add plugins
+  init.lua                   options + keymaps + plugin bootstrap
+  cheatsheet.md              the <leader>? / prefix ? page — edit it, both views update
+  lua/config/options.lua     editor settings, clipboard
+  lua/config/keymaps.lua     global keymaps
+  lua/config/windows.lua     splits, window management, terminal splits
+  lua/config/cheatsheet.lua  the <leader>? popup
+  lua/config/lazy.lua        plugin manager bootstrap
+  lua/plugins/*.lua          one file per concern; add a file to add plugins
+~/.tmux.conf                 tmux, keyed to match everything above
 ```
 
 ## Keymaps
@@ -30,7 +37,76 @@ Leader key is **Space**. Press `<Space>` and pause — which-key shows what's av
 | `<leader>fR`            | Project-wide search & replace        |
 | `Shift-h` / `Shift-l`   | Previous / next buffer               |
 | `<leader>bd`            | Close buffer                         |
-| `Ctrl-h/j/k/l`          | Move between splits                  |
+| `Ctrl-h/j/k/l`          | Move between splits — and tmux panes |
+
+### Harpoon (the files you keep coming back to)
+
+Telescope searches everything; harpoon is the handful of files you're actually
+working in, pinned to a number so the jump is one motion and always lands in
+the same place. The list is per project directory and survives restarts.
+
+| Key                         | Action                            |
+| --------------------------- | --------------------------------- |
+| `<leader>ha`                | Add the current file to the list  |
+| `<leader>hh` / `Ctrl-e`     | Open the list                     |
+| `<leader>1` … `<leader>4`   | Jump to that slot                 |
+| `<leader>hn` / `<leader>hp` | Next / previous file in the list  |
+
+The list opens as an ordinary buffer: `dd` removes an entry, moving lines
+around reorders the slots, and `q` or `<Esc>` closes it — changes are saved on
+close.
+
+From any Telescope picker, `Ctrl-v` opens the highlighted result in a vertical
+split, `Ctrl-x` in a horizontal one and `Ctrl-t` in a new tab. That's usually
+the fastest way to get a second file up beside the first.
+
+### Splits & windows
+
+| Key                         | Action                                        |
+| --------------------------- | --------------------------------------------- |
+| `<leader>\|` / `<leader>wv` | Split right (vertical)                        |
+| `<leader>-` / `<leader>ws`  | Split below (horizontal)                      |
+| `<leader>wd`                | Close this window (buffer stays open)         |
+| `<leader>wo`                | Close all the other windows                   |
+| `<leader>wm`                | Maximise this window — press again to restore |
+| `<leader>w=`                | Even out the sizes                            |
+| `<leader>wh/j/k/l`          | Move the window to that edge                  |
+| `<leader>wx` / `<leader>wr` | Swap with next / rotate                       |
+| `<leader>wT`                | Move the window out to its own tab            |
+| `Ctrl-Arrows`               | Resize                                        |
+
+`splitright` and `splitbelow` are on, so a new split appears where you're
+already looking and the cursor moves into it. `<leader>wd` closes the _window_
+and leaves the buffer loaded; `<leader>bd` is for actually closing a buffer.
+
+`<leader>wh/j/k/l` is how you convert a stacked layout into a side-by-side one
+without closing anything — it moves the current window to that edge of the
+screen and rearranges the rest around it.
+
+### Terminals
+
+| Key          | Action                                    |
+| ------------ | ----------------------------------------- |
+| `<leader>tt` | Shell in a split below (toggle)           |
+| `<leader>tv` | Shell in a split to the right (toggle)    |
+| `<leader>tf` | Shell in a floating window (toggle)       |
+| `<leader>tn` | One more shell below, not toggled         |
+| `<Esc><Esc>` | Terminal → normal mode, to scroll or copy |
+| `i` / `a`    | Back to typing                            |
+
+The three toggles each keep **their own shell**. Hiding one leaves it running,
+and pressing the key again brings it back with its history, working directory
+and any running job intact — `<leader>tt` is a place you go back to, not a new
+shell every time. Exiting the shell closes its window for good.
+
+Entering a terminal window drops you straight into typing. Terminal splits are
+`winfixheight`/`winfixwidth`, so `<leader>w=` and new splits won't squash them.
+
+`Ctrl-h/j/k/l` works from inside a terminal without pressing `<Esc><Esc>`
+first. The cost is that the shell's own `Ctrl-l` (clear screen) is unavailable
+inside a Neovim terminal split — type `clear` instead. In a plain tmux pane
+`Ctrl-l` still clears, because tmux only intercepts it when the pane is running
+Neovim.
 
 ### File explorer (oil.nvim)
 
@@ -92,6 +168,68 @@ directories.
 | `Alt-j` / `Alt-k` | Move selected lines    |
 | `Esc`             | Clear search highlight |
 
+## tmux
+
+`~/.tmux.conf` is keyed to match everything above, so splitting and closing is
+the same motion whether the box you're looking at is a Neovim window or a tmux
+pane. The point of adding tmux on top of Neovim's own splits is that a tmux
+session **survives disconnection** — over SSH to a Pi that matters, since a
+dropped link would otherwise take your editor and every running job with it.
+
+```
+tmux            start a session
+tmux a          re-attach to the last one (after a dropped SSH connection)
+prefix D        detach, leaving everything running
+```
+
+The prefix is **`Ctrl-Space`** — Neovim's leader with Ctrl held.
+
+### The same keys, both sides
+
+| Action                 | Neovim                        | tmux                                  |
+| ---------------------- | ----------------------------- | ------------------------------------- |
+| Move around            | `Ctrl-h/j/k/l`                | same key                              |
+| Split right            | `<leader>\|` / `<leader>wv`   | `prefix \|` / `prefix v`              |
+| Split below            | `<leader>-` / `<leader>ws`    | `prefix -` / `prefix s`               |
+| Close this one         | `<leader>wd`                  | `prefix d`                            |
+| Close all the others   | `<leader>wo`                  | `prefix o`                            |
+| Maximise / zoom toggle | `<leader>wm`                  | `prefix m`                            |
+| Even out the sizes     | `<leader>w=`                  | `prefix =`                            |
+| Swap with next         | `<leader>wx`                  | `prefix x`                            |
+| Previous / next        | `Shift-h`/`Shift-l` (buffers) | `prefix H`/`prefix L` (windows)       |
+| Resize                 | `Ctrl-Arrows`                 | `Alt-Arrows`, or `prefix Ctrl-Arrows` |
+| Cheatsheet             | `<leader>?`                   | `prefix ?`                            |
+
+Plus the tmux-only ones: `prefix c` new window, `prefix 1..9` jump to window,
+`prefix ,` rename, `prefix S` session picker, `prefix [` copy mode (vim keys —
+`v` to select, `y` to yank), `prefix r` reload the config, `prefix /` list every
+binding.
+
+### How `Ctrl-h/j/k/l` crosses the boundary
+
+Both halves cooperate. tmux checks whether the focused pane is running Neovim;
+if it is, the keystroke is forwarded rather than acted on, and
+[vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator) decides
+whether there's a Neovim split that way — if not, it calls back into tmux to
+move the pane. The upshot is that you press one set of keys and stop caring
+which program owns the box. Movement stops at the edge of the screen rather
+than wrapping to the far side.
+
+### Things worth knowing
+
+- **`prefix d` kills the pane; it does not detach.** That's the price of
+  matching `<leader>wd`. Detach is `prefix D` (or `prefix Ctrl-d`), and it's
+  the one you want before closing an SSH session.
+- **`Ctrl-Space` is swallowed by tmux**, so nvim-cmp's manual completion
+  trigger doesn't reach Neovim. Press it twice to send a real one through.
+- **Neovim yanks still reach your local clipboard.** tmux normally intercepts
+  the OSC52 escape sequences that make that work; `set-clipboard on` and
+  `allow-passthrough on` forward them to the outer terminal instead.
+- **Mouse mode is on**, matching Neovim's. Hold Shift to get your terminal's
+  own text selection back when you want it.
+- **`escape-time` is 10ms.** The 500ms default makes `<Esc>` in Neovim feel
+  broken inside tmux.
+
 ## Managing it
 
 - `:Lazy` — plugin manager (`U` updates, `x` cleans removed plugins)
@@ -129,6 +267,9 @@ Things that were non-obvious on this machine, in case you hit them again:
   plugins. v0.12.4 is installed to `/opt/nvim`, symlinked at
   `/usr/local/bin/nvim`. To upgrade, replace that directory with a newer
   `nvim-linux-arm64.tar.gz`.
+- **tmux _is_ from apt** (3.3a), unlike Neovim — Debian 12's version is recent
+  enough. It needs to be ≥ 3.3 for `allow-passthrough`, which is what keeps
+  Neovim's OSC52 clipboard working through a tmux pane.
 - **tree-sitter CLI is pinned to v0.25.10.** Releases from v0.26 onward need
   glibc 2.39; this system has 2.36, so newer binaries won't run at all.
   `:checkhealth` reports "tree-sitter-cli v0.26.1 is required" — it's advisory,

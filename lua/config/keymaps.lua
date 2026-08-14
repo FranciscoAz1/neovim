@@ -6,11 +6,9 @@ map("n", "<Esc>", "<cmd>nohlsearch<CR>")
 -- Save / quit (VS Code muscle memory)
 map({ "n", "i", "v" }, "<C-s>", "<cmd>write<CR><Esc>", { desc = "Save file" })
 
--- Window navigation
-map("n", "<C-h>", "<C-w>h", { desc = "Window left" })
-map("n", "<C-j>", "<C-w>j", { desc = "Window down" })
-map("n", "<C-k>", "<C-w>k", { desc = "Window up" })
-map("n", "<C-l>", "<C-w>l", { desc = "Window right" })
+-- Window navigation is Ctrl-h/j/k/l, defined in lua/plugins/tmux.lua so that
+-- the same keys also cross into tmux panes. Splits, closing and terminals live
+-- in lua/config/windows.lua.
 
 -- Resize windows
 map("n", "<C-Up>", "<cmd>resize +2<CR>", { desc = "Grow window" })

@@ -10,3 +10,5 @@ vim.g.have_nerd_font = true
 require("config.options")
 require("config.lazy")
 require("config.keymaps")
+require("config.windows")
+require("config.cheatsheet")
