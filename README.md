@@ -221,7 +221,8 @@ than wrapping to the far side.
   matching `<leader>wd`. Detach is `prefix D` (or `prefix Ctrl-d`), and it's
   the one you want before closing an SSH session.
 - **`Ctrl-Space` is swallowed by tmux**, so nvim-cmp's manual completion
-  trigger doesn't reach Neovim. Press it twice to send a real one through.
+  trigger doesn't reach Neovim. `Ctrl-l` in insert mode does the same thing and
+  works everywhere; `Ctrl-Space` twice also sends a real one through.
 - **Neovim yanks still reach your local clipboard.** tmux normally intercepts
   the OSC52 escape sequences that make that work; `set-clipboard on` and
   `allow-passthrough on` forward them to the outer terminal instead.

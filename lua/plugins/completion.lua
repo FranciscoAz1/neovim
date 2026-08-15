@@ -32,6 +32,12 @@ return {
         ["<C-p>"] = cmp.mapping.select_prev_item(),
         ["<C-b>"] = cmp.mapping.scroll_docs(-4),
         ["<C-f>"] = cmp.mapping.scroll_docs(4),
+        -- Manual trigger. Ctrl-Space is the tmux prefix, so inside tmux it
+        -- never reaches Neovim; Ctrl-l is the trigger that always works.
+        -- (tmux forwards Ctrl-l to the pane when it's running Neovim, and
+        -- Neovim only steers it to the split-navigation mapping in normal and
+        -- terminal mode, so insert mode is free.)
+        ["<C-l>"] = cmp.mapping.complete(),
         ["<C-Space>"] = cmp.mapping.complete(),
         ["<C-e>"] = cmp.mapping.abort(),
         ["<CR>"] = cmp.mapping.confirm({ select = false }),

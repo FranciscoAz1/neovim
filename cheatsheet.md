@@ -113,6 +113,7 @@
   prefix ?                this cheatsheet
   prefix /                every tmux binding
 
-  Inside tmux, Ctrl-Space is the prefix, so Neovim never sees it. Press
-  it twice to send a real Ctrl-Space through (that's cmp's manual
-  completion trigger).
+  Inside tmux, Ctrl-Space is the prefix, so Neovim never sees it. cmp's
+  manual completion trigger is therefore also on Ctrl-l in insert mode,
+  which works either way. Pressing Ctrl-Space twice sends a real one
+  through if you prefer that.
