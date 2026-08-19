@@ -145,6 +145,10 @@ directories.
 | `<leader>cs` | Document symbols                               |
 | `<leader>e`  | Show line diagnostic                           |
 | `<leader>xx` | Diagnostics panel                              |
+| `<leader>cc` | Toggle Claude Code terminal                    |
+| `<leader>cC` | Toggle Claude Code, resuming last conversation |
+| `<leader>cR` | Toggle Claude Code with conversation picker    |
+| `<leader>cV` | Toggle Claude Code with verbose output         |
 
 ### Git
 
