@@ -25,11 +25,11 @@ map("n", "<leader>bd", "<cmd>bdelete<CR>", { desc = "Delete buffer" })
 map("v", "<A-j>", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
 map("v", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 
--- Keep cursor centred when scrolling / searching
-map("n", "<C-d>", "<C-d>zz")
-map("n", "<C-u>", "<C-u>zz")
-map("n", "n", "nzzzv")
-map("n", "N", "Nzzzv")
+-- Cursor stays vertically centered via scrolloff=999 (options.lua) — no need
+-- to remap j/k/<C-d>/<C-u> to force it, which was the source of the jitter.
+-- zv still needs to be explicit: it opens a fold the search landed inside.
+map("n", "n", "nzv")
+map("n", "N", "Nzv")
 
 -- Indent without losing selection
 map("v", "<", "<gv")

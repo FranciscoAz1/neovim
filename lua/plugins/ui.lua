@@ -65,6 +65,7 @@ return {
         { "<leader>w", group = "window" },
         { "<leader>t", group = "terminal" },
         { "<leader>h", group = "harpoon" },
+        { "<leader>z", group = "zen" },
       },
     },
   },
