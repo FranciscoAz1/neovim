@@ -30,7 +30,21 @@ return {
     cmd = "Twilight",
     opts = {
       dimming = { alpha = 0.25 },
-      context = 10, -- lines of context kept undimmed around the cursor
+      context = 10, -- fallback line count when treesitter has no enclosing node
+      treesitter = true, -- prefer the enclosing function/class node over the line count above
+      expand = { -- node types that widen the undimmed region to the whole node
+        "function",
+        "function_declaration",
+        "function_definition",
+        "method_declaration",
+        "method_definition",
+        "arrow_function",
+        "class",
+        "class_declaration",
+        "class_definition",
+        "table",
+        "if_statement",
+      },
     },
   },
 }

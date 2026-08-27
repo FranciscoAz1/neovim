@@ -31,6 +31,18 @@ map("v", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 map("n", "n", "nzv")
 map("n", "N", "Nzv")
 
+-- Toggle the scrolloff=999 auto-centering for when you don't want j/k to
+-- keep recentering the cursor.
+map("n", "<leader>zc", function()
+  if vim.o.scrolloff >= 999 then
+    vim.o.scrolloff = 8
+    print("Centered scrolling: off")
+  else
+    vim.o.scrolloff = 999
+    print("Centered scrolling: on")
+  end
+end, { desc = "Toggle centered cursor scrolling" })
+
 -- Indent without losing selection
 map("v", "<", "<gv")
 map("v", ">", ">gv")
