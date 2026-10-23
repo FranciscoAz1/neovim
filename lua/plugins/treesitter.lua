@@ -48,14 +48,39 @@ return {
     -- also catches the ones Neovim bundles (c, lua, markdown, query, vim,
     -- vimdoc), so we never rebuild those. Without this guard a parser that
     -- fails to build would be retried on every single startup.
+    -- `.*` rather than `.so`: on Windows parsers (including the bundled ones)
+    -- are `.dll`, and a `.so`-only check would try to rebuild all of them.
     local missing = {}
     for _, lang in ipairs(parsers) do
-      if #vim.api.nvim_get_runtime_file("parser/" .. lang .. ".so", false) == 0 then
+      if #vim.api.nvim_get_runtime_file("parser/" .. lang .. ".*", false) == 0 then
         table.insert(missing, lang)
       end
     end
+
+    -- Building parsers needs the tree-sitter CLI. mason.nvim only adds its bin
+    -- dir to PATH once it loads (with LSP, later than this), so add it here too
+    -- so a Mason-installed tree-sitter-cli is found at startup.
+    local mason_bin = vim.fs.joinpath(vim.fn.stdpath("data"), "mason", "bin")
+    if vim.fn.isdirectory(mason_bin) == 1 and not vim.env.PATH:find(mason_bin, 1, true) then
+      local sep = vim.fn.has("win32") == 1 and ";" or ":"
+      vim.env.PATH = mason_bin .. sep .. vim.env.PATH
+    end
+
     if #missing > 0 then
-      require("nvim-treesitter").install(missing)
+      if vim.fn.executable("tree-sitter") == 1 then
+        require("nvim-treesitter").install(missing)
+      else
+        -- Without the CLI every build fails with ENOENT. Warn once instead of
+        -- spamming one error per parser on every startup.
+        vim.schedule(function()
+          vim.notify(
+            "tree-sitter CLI not found; skipping install of: "
+              .. table.concat(missing, ", ")
+              .. "\nInstall it (e.g. :MasonInstall tree-sitter-cli) plus a C compiler, then restart.",
+            vim.log.levels.WARN
+          )
+        end)
+      end
     end
 
     -- Rebuild everything on demand after an update
