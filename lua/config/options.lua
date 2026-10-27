@@ -43,10 +43,14 @@ opt.synmaxcol = 300
 opt.mouse = "a"
 opt.clipboard = "unnamedplus" -- shares with the system clipboard
 
--- Over SSH there is no X display, so xclip can't reach a clipboard. Fall back
--- to OSC52 escape sequences, which make the *terminal* do the copying — that
--- lands text in the clipboard of whatever machine you're sitting at.
-if vim.env.SSH_TTY and not vim.env.DISPLAY then
+-- Over SSH there is no X/Wayland display, so xclip/wl-copy can't reach a
+-- clipboard. Fall back to OSC52 escape sequences, which make the *terminal* do
+-- the copying — that lands text in the clipboard of whatever machine you're
+-- sitting at. Don't key this on SSH_TTY: it's often empty (e.g. inside a tmux
+-- session started before you connected). Windows and macOS have no DISPLAY
+-- but their native clipboards work, so leave them alone.
+local is_linux_like = vim.fn.has("win32") == 0 and vim.fn.has("mac") == 0
+if is_linux_like and not vim.env.DISPLAY and not vim.env.WAYLAND_DISPLAY then
   local osc52 = require("vim.ui.clipboard.osc52")
   vim.g.clipboard = {
     name = "OSC52",

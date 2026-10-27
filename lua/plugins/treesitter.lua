@@ -66,17 +66,38 @@ return {
       vim.env.PATH = mason_bin .. sep .. vim.env.PATH
     end
 
+    -- Returns nil if the tree-sitter CLI runs, else a short reason. Being on
+    -- PATH isn't enough: prebuilt releases need a recent glibc (v0.26+ wants
+    -- 2.39) and on older distros the binary exists but can't start.
+    local function cli_problem()
+      if vim.fn.executable("tree-sitter") ~= 1 then
+        return "not found"
+      end
+      local ok, res = pcall(function()
+        return vim.system({ "tree-sitter", "--version" }, { text = true }):wait(5000)
+      end)
+      if ok and res.code == 0 then
+        return nil
+      end
+      local err = ok and (res.stderr or "") or tostring(res)
+      return "won't run: " .. (vim.split(vim.trim(err), "\n")[1] or "unknown error")
+    end
+
     if #missing > 0 then
-      if vim.fn.executable("tree-sitter") == 1 then
+      local problem = cli_problem()
+      if not problem then
         require("nvim-treesitter").install(missing)
       else
-        -- Without the CLI every build fails with ENOENT. Warn once instead of
+        -- Without a working CLI every build fails. Warn once instead of
         -- spamming one error per parser on every startup.
+        local hint = "Install it (e.g. :MasonInstall tree-sitter-cli) plus a C compiler, then restart."
+        if problem:find("GLIBC", 1, true) then
+          hint = "The prebuilt binary needs a newer glibc than this system has. Build it locally"
+            .. " with `cargo install --locked tree-sitter-cli` (and remove any Mason copy), then restart."
+        end
         vim.schedule(function()
           vim.notify(
-            "tree-sitter CLI not found; skipping install of: "
-              .. table.concat(missing, ", ")
-              .. "\nInstall it (e.g. :MasonInstall tree-sitter-cli) plus a C compiler, then restart.",
+            "tree-sitter CLI " .. problem .. "\nSkipping install of: " .. table.concat(missing, ", ") .. "\n" .. hint,
             vim.log.levels.WARN
           )
         end)
