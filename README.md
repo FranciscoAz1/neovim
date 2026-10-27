@@ -289,7 +289,9 @@ Things that were non-obvious on this machine, in case you hit them again:
 - **Clipboard uses OSC52 over SSH.** There's no X display, so `xclip` can't
   work; yanks are sent to your local machine's clipboard via terminal escape
   codes. Pasting with `"+p` reads Neovim's own register, since most terminals
-  refuse OSC52 reads. Inside a local desktop session, xclip is used instead.
+  refuse OSC52 reads. OSC52 kicks in whenever there's no `DISPLAY` or
+  `WAYLAND_DISPLAY` (not keyed on `SSH_TTY`, which is often empty inside
+  tmux). Inside a local desktop session, xclip is used instead.
 - **Nerd Font**: JetBrainsMono Nerd Font v3.5.0 is installed at
   `~/.local/share/fonts/JetBrainsMonoNerdFont/`. Select family
   `JetBrainsMono Nerd Font` in the Pi's terminal preferences.
