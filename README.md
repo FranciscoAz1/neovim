@@ -14,11 +14,24 @@ shows the same page on `prefix ?`, so there is one place to look either way.
   lua/config/options.lua     editor settings, clipboard
   lua/config/keymaps.lua     global keymaps
   lua/config/windows.lua     splits, window management, terminal splits
+  lua/plugins/dashboard.lua  start screen, recent places
   lua/config/cheatsheet.lua  the <leader>? popup
   lua/config/lazy.lua        plugin manager bootstrap
   lua/plugins/*.lua          one file per concern; add a file to add plugins
 ~/.tmux.conf                 tmux, keyed to match everything above
 ```
+
+## Start screen
+
+Opening `nvim` with no file shows a dashboard (snacks.nvim,
+`lua/plugins/dashboard.lua`); `<leader>d` brings it back any time.
+
+- **Recent places** — directories you started nvim in or `:cd`'d to (kept in
+  `stdpath("state")/recent_dirs.json`), topped up with git roots of recent
+  files. Picking one (number keys) `cd`s there and opens the file finder.
+- **Recent files**, plus keys for find `f`, grep `g`, new `n`, config `c`,
+  update plugins `u` (`:Lazy sync`), Mason `M`, health check `h`,
+  errors / `:messages` `e`, log files `l` (nvim, LSP, Mason, conform…), quit `q`.
 
 ## Keymaps
 
@@ -29,6 +42,7 @@ shows the same page on `prefix ?`, so there is one place to look either way.
 | `-`                     | Open parent directory (oil)          |
 | `Ctrl-b`                | Toggle explorer in a floating window |
 | `<leader>o`             | Open explorer at project root        |
+| `<leader>d`             | Dashboard (start screen)             |
 | `Ctrl-p` / `<leader>ff` | Find files                           |
 | `<leader>fg`            | Grep across project                  |
 | `<leader>fw`            | Grep word under cursor               |
@@ -98,6 +112,11 @@ The three toggles each keep **their own shell**. Hiding one leaves it running,
 and pressing the key again brings it back with its history, working directory
 and any running job intact — `<leader>tt` is a place you go back to, not a new
 shell every time. Exiting the shell closes its window for good.
+
+They follow nvim's working directory: after you jump somewhere (dashboard,
+`:cd`, the config key) an idle shell gets a `cd` to the new place. A shell that
+is busy running something is left alone and catches up the next time it's
+shown.
 
 Entering a terminal window drops you straight into typing. Terminal splits are
 `winfixheight`/`winfixwidth`, so `<leader>w=` and new splits won't squash them.
