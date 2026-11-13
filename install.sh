@@ -71,30 +71,52 @@ repo_slug() {
   printf '%s\n' "$url" | awk -F/ '{ print tolower($(NF-1) "/" $NF) }'
 }
 
+# Prints the Node.js packages to request from the package manager: nothing
+# when node and npm are already here. A node from somewhere else (NodeSource,
+# nvm, ...) brings its own npm, and the distro's npm package then cannot be
+# installed next to it — it depends on the distro's own nodejs version.
+node_packages() {
+  local major
+  if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+    major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+    say "Node.js $(node --version 2>/dev/null) with npm is already installed — leaving it alone" >&2
+    [ "$major" -ge 18 ] ||
+      warn "That Node.js is older than 18; some language servers Mason installs may not run on it."
+    return
+  fi
+  echo "nodejs npm"
+}
+
 install_packages_apt() {
+  local node_pkgs
+  node_pkgs="$(node_packages)"
+
   say "Installing system packages (apt)"
   as_root apt-get update
+  # shellcheck disable=SC2086  # node_pkgs is deliberately split into words
   as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    git build-essential curl unzip ripgrep nodejs npm python3-venv tmux
+    git build-essential curl unzip ripgrep python3-venv tmux $node_pkgs
 }
 
 install_packages_ol() {
-  local major="${VERSION_ID%%.*}"
+  local major="${VERSION_ID%%.*}" node_pkgs
   [ "$major" = 9 ] || warn "Only Oracle Linux 9 has been checked; this is $VERSION_ID."
+  node_pkgs="$(node_packages)"
 
   say "Installing system packages (dnf)"
   # ripgrep is only in EPEL
   as_root dnf install -y "oracle-epel-release-el${major}"
   # The default nodejs is 16, too old for the language servers Mason installs.
   # Leave an existing node alone: switching module streams under it would fail.
-  if ! command -v node >/dev/null 2>&1; then
+  if [ -n "$node_pkgs" ] && ! command -v node >/dev/null 2>&1; then
     as_root dnf module enable -y "nodejs:${NODEJS_STREAM}" ||
       warn "Could not enable the nodejs:${NODEJS_STREAM} module; using whichever stream is active."
   fi
   # curl is left out on purpose: minimal images ship curl-minimal, which
   # conflicts with the full package. python3 already includes venv.
+  # shellcheck disable=SC2086  # node_pkgs is deliberately split into words
   as_root dnf install -y \
-    git gcc gcc-c++ make unzip tar gzip ripgrep nodejs npm python3 python3-pip tmux
+    git gcc gcc-c++ make unzip tar gzip ripgrep python3 python3-pip tmux $node_pkgs
 }
 
 install_packages() {

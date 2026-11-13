@@ -84,8 +84,11 @@ The script leaves these to you:
 - **ripgrep comes from EPEL**, so the script installs `oracle-epel-release-el9`
   first.
 - **Node.js comes from the `nodejs:22` module stream.** The default `nodejs`
-  package is 16, too old for the language servers. If `node` is already
-  installed, the script leaves its stream alone.
+  package is 16, too old for the language servers.
+- **An existing Node.js is left alone.** If `node` and `npm` are already there
+  (from NodeSource, say), the script installs neither package. Asking dnf for
+  the distro `npm` next to a NodeSource `nodejs` fails: that `npm` depends on
+  the distro's own Node 16. The same goes for apt.
 - **glibc is 2.34.** The Neovim v0.12.4 and tree-sitter v0.25.10 release
   binaries need 2.34 at most, so the same pins work; tree-sitter v0.26+ does
   not.
@@ -112,6 +115,10 @@ sudo dnf install oracle-epel-release-el9
 sudo dnf module enable nodejs:22
 sudo dnf install git gcc gcc-c++ make unzip tar gzip ripgrep nodejs npm python3 python3-pip tmux
 ```
+
+If `node` and `npm` are already installed from somewhere else, such as
+NodeSource, leave `nodejs npm` out of the install line and skip the
+`module enable` — the distro packages conflict with it.
 
 | Package                                 | Needed for                                                       |
 | --------------------------------------- | ---------------------------------------------------------------- |
