@@ -5,6 +5,102 @@ Leader key is **Space**. Press `<Space>` and pause — which-key shows what's av
 **`<leader>?` opens a cheatsheet** covering splits, terminals and tmux. tmux
 shows the same page on `prefix ?`, so there is one place to look either way.
 
+## Installation
+
+Written for a Raspberry Pi on Debian 12 (arm64). Elsewhere the steps are the
+same; only the package manager and the release-asset names change.
+
+### 1. System packages
+
+```bash
+sudo apt update
+sudo apt install git build-essential curl unzip ripgrep nodejs npm python3-venv tmux
+```
+
+| Package             | Needed for                                                       |
+| ------------------- | ---------------------------------------------------------------- |
+| `git`               | lazy.nvim bootstrap and every plugin install                     |
+| `build-essential`   | compiling tree-sitter parsers and telescope's fzf sorter (`make`) |
+| `curl`, `unzip`     | Mason downloads                                                  |
+| `ripgrep`           | `<leader>fg` / `<leader>fw` grep and `<leader>fR` search-replace |
+| `nodejs`, `npm`     | most language servers (ts_ls, pyright, eslint, …) and prettier   |
+| `python3-venv`      | Mason's install of ruff                                          |
+| `tmux` (≥ 3.3)      | optional — sessions that survive a dropped SSH link              |
+
+### 2. Neovim
+
+apt's Neovim is far too old (Debian 12 ships 0.7.2), so install a release
+tarball. v0.12.4 is what this config runs on; it uses APIs that don't exist
+before 0.11.
+
+```bash
+curl -LO https://github.com/neovim/neovim/releases/download/v0.12.4/nvim-linux-arm64.tar.gz
+sudo rm -rf /opt/nvim && sudo mkdir -p /opt/nvim
+sudo tar -C /opt/nvim --strip-components=1 -xzf nvim-linux-arm64.tar.gz
+sudo ln -sf /opt/nvim/bin/nvim /usr/local/bin/nvim
+nvim --version
+```
+
+On an x86-64 machine the asset is `nvim-linux-x86_64.tar.gz`.
+
+### 3. tree-sitter CLI
+
+Parsers are compiled locally, which needs the `tree-sitter` binary. Pin
+v0.25.10 here — v0.26+ needs glibc 2.39 and won't start on Debian 12.
+
+```bash
+curl -L https://github.com/tree-sitter/tree-sitter/releases/download/v0.25.10/tree-sitter-linux-arm64.gz \
+  | gunzip | sudo tee /usr/local/bin/tree-sitter > /dev/null
+sudo chmod +x /usr/local/bin/tree-sitter
+tree-sitter --version
+```
+
+On a distro with a newer glibc, `:MasonInstall tree-sitter-cli` from inside
+Neovim does the job instead. Without a working CLI the config still starts — it
+warns once and skips the parser builds.
+
+### 4. This config
+
+```bash
+[ -e ~/.config/nvim ] && mv ~/.config/nvim ~/.config/nvim.bak
+git clone https://github.com/FranciscoAz1/neovim ~/.config/nvim
+nvim
+```
+
+On Windows the target directory is `%LOCALAPPDATA%\nvim`.
+
+The first launch does the rest by itself, so let it finish before judging it:
+
+- **Plugins** — lazy.nvim clones itself, then installs every plugin at the
+  commit pinned in `lazy-lock.json`. To do this without the UI:
+  `nvim --headless "+Lazy! restore" +qa`.
+- **Tree-sitter parsers** — the missing ones compile in the background. Allow
+  several minutes on a Pi.
+- **Language servers** — Mason installs them the first time you open a file,
+  not at startup. Watch progress in `:Mason`.
+
+Formatters are _not_ installed automatically. Once, from inside Neovim:
+
+```vim
+:MasonInstall prettier stylua ruff
+```
+
+Then run `:checkhealth` to see what, if anything, is still missing.
+
+### 5. Optional extras
+
+- **lazygit** — `<leader>gg` runs it. Take the `Linux_arm64` tarball from its
+  [releases page](https://github.com/jesseduffield/lazygit/releases) if your
+  apt doesn't carry it, and put the binary on `PATH`.
+- **Claude Code** — `<leader>cc` and friends need the `claude` CLI on `PATH`.
+- **Nerd Font** — icons need one in the terminal _you are typing at_ (the
+  local machine when over SSH). Without one, set
+  `vim.g.have_nerd_font = false` in `init.lua`.
+- **tmux config** — `~/.tmux.conf` is not part of this repo. Neovim works
+  without it; the mirrored `prefix` keys, the `prefix ?` cheatsheet and
+  `Ctrl-h/j/k/l` crossing into tmux panes need it. See [tmux](#tmux) for what
+  it has to provide (including `allow-passthrough on` for the clipboard).
+
 ## Layout
 
 ```
