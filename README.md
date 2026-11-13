@@ -7,11 +7,15 @@ shows the same page on `prefix ?`, so there is one place to look either way.
 
 ## Installation
 
-One command, run as your normal user (it asks for `sudo` itself):
+One command, run as a user who can `sudo`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/FranciscoAz1/neovim/main/install.sh | bash
 ```
+
+The system-wide parts need root, so `sudo` asks for your password once, right
+at the start. Piping into `sudo bash` instead works just as well: the config
+and plugins still go to the user who called `sudo`, not to root.
 
 Supported: **Debian 12 / Raspberry Pi OS / Ubuntu** (apt) and **Oracle Linux
 9.6** (dnf), on arm64 and x86-64. [`install.sh`](install.sh) does this:
@@ -35,7 +39,8 @@ less install.sh
 bash install.sh
 ```
 
-Settings go between the pipe and `bash`, e.g. `… | SKIP_PACKAGES=1 bash`:
+Settings go between the pipe and `bash`, e.g. `… | SKIP_PACKAGES=1 bash` (or
+after `sudo`: `… | sudo SKIP_PACKAGES=1 bash`):
 
 | Variable              | Effect                                                  |
 | --------------------- | ------------------------------------------------------- |

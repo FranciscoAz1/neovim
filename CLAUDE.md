@@ -24,7 +24,9 @@ There is no build system. Everything runs inside Neovim itself:
 `install.sh` is the one-command installer (`curl … | bash`) for apt-based systems and Oracle
 Linux 9. Its version pins (Neovim, tree-sitter CLI), package lists and formatter list are repeated
 in `README.md`'s "Manual installation" — change both together. Its whole body runs from `main` on
-the last line so a truncated download can't execute half a script; keep that shape.
+the last line so a truncated download can't execute half a script; keep that shape. It must work
+both as `… | bash` (calls sudo itself) and `… | sudo bash`: anything touching the user's home goes
+through `as_user`, anything system-wide through `as_root`.
 
 `lazy-lock.json` pins exact plugin commits; commit it whenever `:Lazy` changes versions so the Pi
 stays reproducible.
