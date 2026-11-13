@@ -71,10 +71,42 @@ map("n", "<leader>wT", "<C-w>T", { desc = "Move window to new tab" })
 -- Terminal splits
 --------------------------------------------------------------------------
 -- One terminal per position, remembered across toggles: pressing <leader>tt
--- again gives you the same shell back — history, cwd and running jobs intact —
+-- again gives you the same shell back — history and running jobs intact —
 -- instead of spawning a new one every time.
 
-local terms = {} -- "below" | "right" | "float"  ->  { buf, win }
+local terms = {} -- "below" | "right" | "float"  ->  { buf, win, job, cwd }
+
+-- Keep a remembered shell in nvim's cwd: after you jump somewhere (dashboard,
+-- :cd, the config key), the next <leader>tt should open *there*, not wherever
+-- the shell was first started. We only `cd` a shell that's idle at its prompt
+-- (no child processes), so a running program never gets keystrokes typed into
+-- it; a busy shell is retried the next time it's shown.
+local is_win = vim.fn.has("win32") == 1
+
+local function sync_cwd(t)
+  local cwd = vim.fn.getcwd()
+  if not t.job or t.cwd == cwd then
+    return
+  end
+  local ok, pid = pcall(vim.fn.jobpid, t.job)
+  if not ok or #vim.api.nvim_get_proc_children(pid) > 0 then
+    return
+  end
+  local is_cmd = vim.fn.fnamemodify(vim.o.shell, ":t"):lower():match("^cmd") ~= nil
+  local cmd = (is_cmd and "cd /d " or "cd ") .. vim.fn.shellescape(cwd)
+  -- Clear anything half-typed first: Ctrl-U in unix shells, Esc in cmd/pwsh
+  vim.fn.chansend(t.job, (is_win and "\27" or "\21") .. cmd .. "\r")
+  t.cwd = cwd
+end
+
+vim.api.nvim_create_autocmd("DirChanged", {
+  group = vim.api.nvim_create_augroup("terminal-cwd", { clear = true }),
+  callback = function()
+    for _, t in pairs(terms) do
+      sync_cwd(t)
+    end
+  end,
+})
 
 local function open_split(pos, buf)
   if pos == "below" then
@@ -128,6 +160,7 @@ local function toggle(pos)
 
   -- Hidden but alive: put it back on screen
   if t and t.buf and vim.api.nvim_buf_is_valid(t.buf) then
+    sync_cwd(t)
     t.win = show(pos, t.buf)
     vim.cmd("startinsert")
     return
@@ -137,8 +170,10 @@ local function toggle(pos)
   t = { buf = vim.api.nvim_create_buf(false, false) }
   terms[pos] = t
   t.win = show(pos, t.buf)
-  vim.fn.jobstart(vim.o.shell, {
+  t.cwd = vim.fn.getcwd()
+  t.job = vim.fn.jobstart(vim.o.shell, {
     term = true,
+    cwd = t.cwd,
     on_exit = function()
       vim.schedule(function()
         terms[pos] = nil

@@ -37,7 +37,7 @@ each file returns a lazy.nvim plugin spec (or a list of specs). When adding func
 putting it in the plugin file it belongs to rather than growing `config/keymaps.lua`.
 
 **Keymap namespacing under `<leader>`**: `f` find, `g` git, `c` code, `b` buffer, `x`
-diagnostics, `w` window, `t` terminal, `h` harpoon (declared as which-key groups in
+diagnostics, `w` window, `t` terminal, `h` harpoon, plus a lone `<leader>d` for the dashboard (groups declared as which-key groups in
 `lua/plugins/ui.lua`). Follow this scheme for new bindings so they show up correctly in which-key
 and don't collide.
 
@@ -58,7 +58,8 @@ bindings. Changes to window/split keymaps in `lua/config/windows.lua` should sta
 **Terminals are position-keyed singletons**, not one-shot spawns: `lua/config/windows.lua` keeps a
 `terms` table keyed by `"below" | "right" | "float"`, so `<leader>tt` repeatedly toggles the same
 shell (history/cwd/job intact) rather than creating a new one. `<leader>tn` is the deliberate
-exception — an unmanaged, throwaway extra terminal.
+exception — an unmanaged, throwaway extra terminal. Remembered shells follow nvim's cwd: on
+`DirChanged` (and when re-shown) an idle shell — no child processes — is sent a `cd`.
 
 **LSP config lives entirely in `lua/plugins/lsp.lua`**: mason-lspconfig installs servers and
 `automatic_enable`s them; buffer-local keymaps (`gd`, `gr`, `K`, `<leader>cr`, etc.) are attached
