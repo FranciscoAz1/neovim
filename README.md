@@ -5,11 +5,171 @@ Leader key is **Space**. Press `<Space>` and pause — which-key shows what's av
 **`<leader>?` opens a cheatsheet** covering splits, terminals and tmux. tmux
 shows the same page on `prefix ?`, so there is one place to look either way.
 
+## Installation
+
+One command, run as your normal user (it asks for `sudo` itself):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/FranciscoAz1/neovim/main/install.sh | bash
+```
+
+Supported: **Debian 12 / Raspberry Pi OS / Ubuntu** (apt) and **Oracle Linux
+9.6** (dnf), on arm64 and x86-64. [`install.sh`](install.sh) does this:
+
+1. Installs the system packages (table below).
+2. Installs Neovim v0.12.4 to `/opt/nvim`, symlinked at `/usr/local/bin/nvim`.
+3. Installs the tree-sitter CLI v0.25.10 to `/usr/local/bin`.
+4. Clones this repo to `~/.config/nvim`. An existing config is moved to
+   `~/.config/nvim.bak.<timestamp>` first — nothing is deleted.
+5. Starts Neovim headless to install every plugin at the commit pinned in
+   `lazy-lock.json`, then the formatters (prettier, stylua, ruff) through Mason.
+
+It is safe to run again: steps that are already done are skipped, and a config
+that is already this repo is fast-forwarded instead of re-cloned.
+
+To read it before running it:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/FranciscoAz1/neovim/main/install.sh
+less install.sh
+bash install.sh
+```
+
+Settings go between the pipe and `bash`, e.g. `… | SKIP_PACKAGES=1 bash`:
+
+| Variable              | Effect                                                  |
+| --------------------- | ------------------------------------------------------- |
+| `NVIM_VERSION`        | Neovim release tag (default `v0.12.4`)                  |
+| `TREE_SITTER_VERSION` | tree-sitter CLI release tag (default `v0.25.10`)        |
+| `NODEJS_STREAM`       | Oracle Linux only: nodejs module stream (default `22`)  |
+| `NVIM_CONFIG_REPO`    | clone the config from another URL, such as a fork       |
+| `NVIM_CONFIG_BRANCH`  | check out a branch other than the default               |
+| `SKIP_PACKAGES=1`     | don't touch apt/dnf                                     |
+| `SKIP_BOOTSTRAP=1`    | don't start Neovim to install plugins and formatters    |
+
+### After the script
+
+Run `nvim`. Two things still happen on that first interactive launch, so let it
+finish before judging it:
+
+- **Tree-sitter parsers** compile in the background. Allow several minutes on
+  a Pi.
+- **Language servers** — Mason installs them the first time you open a file,
+  not at startup. Watch progress in `:Mason`.
+
+Then `:checkhealth` shows what, if anything, is still missing.
+
+The script leaves these to you:
+
+- **lazygit** — `<leader>gg` runs it. Take the `Linux_arm64` (or
+  `Linux_x86_64`) tarball from its
+  [releases page](https://github.com/jesseduffield/lazygit/releases) if your
+  package manager doesn't carry it, and put the binary on `PATH`.
+- **Claude Code** — `<leader>cc` and friends need the `claude` CLI on `PATH`.
+- **Nerd Font** — icons need one in the terminal _you are typing at_ (the
+  local machine when over SSH). Without one, set
+  `vim.g.have_nerd_font = false` in `init.lua`.
+- **tmux config** — `~/.tmux.conf` is not part of this repo. Neovim works
+  without it; the mirrored `prefix` keys, the `prefix ?` cheatsheet and
+  `Ctrl-h/j/k/l` crossing into tmux panes need it. See [tmux](#tmux) for what
+  it has to provide.
+
+### Oracle Linux 9.6 notes
+
+- **ripgrep comes from EPEL**, so the script installs `oracle-epel-release-el9`
+  first.
+- **Node.js comes from the `nodejs:22` module stream.** The default `nodejs`
+  package is 16, too old for the language servers. If `node` is already
+  installed, the script leaves its stream alone.
+- **glibc is 2.34.** The Neovim v0.12.4 and tree-sitter v0.25.10 release
+  binaries need 2.34 at most, so the same pins work; tree-sitter v0.26+ does
+  not.
+- **tmux is 3.2a**, below the 3.3 the tmux setup here assumes.
+  `allow-passthrough` doesn't exist before 3.3, so that line has to come out
+  of `~/.tmux.conf`. Whether yanks still reach your local clipboard through
+  tmux without it has not been tried.
+
+### Manual installation
+
+What the script does, by hand.
+
+**1. System packages.** Debian 12 / Raspberry Pi OS / Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install git build-essential curl unzip ripgrep nodejs npm python3-venv tmux
+```
+
+Oracle Linux 9.6:
+
+```bash
+sudo dnf install oracle-epel-release-el9
+sudo dnf module enable nodejs:22
+sudo dnf install git gcc gcc-c++ make unzip tar gzip ripgrep nodejs npm python3 python3-pip tmux
+```
+
+| Package                                 | Needed for                                                       |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| `git`                                   | lazy.nvim bootstrap and every plugin install                     |
+| `build-essential` / `gcc gcc-c++ make`  | compiling tree-sitter parsers and telescope's fzf sorter         |
+| `curl`, `unzip`, `tar`, `gzip`          | Mason downloads                                                  |
+| `ripgrep`                               | `<leader>fg` / `<leader>fw` grep and `<leader>fR` search-replace |
+| `nodejs`, `npm`                         | most language servers (ts_ls, pyright, eslint, …) and prettier   |
+| `python3-venv` / `python3 python3-pip`  | Mason's install of ruff                                          |
+| `tmux`                                  | optional — sessions that survive a dropped SSH link              |
+
+**2. Neovim.** The packaged one is far too old (Debian 12 ships 0.7.2), so
+install a release tarball. v0.12.4 is what this config runs on; it uses APIs
+that don't exist before 0.11. On x86-64 replace `arm64` with `x86_64`.
+
+```bash
+curl -LO https://github.com/neovim/neovim/releases/download/v0.12.4/nvim-linux-arm64.tar.gz
+sudo rm -rf /opt/nvim && sudo mkdir -p /opt/nvim
+sudo tar -C /opt/nvim --strip-components=1 -xzf nvim-linux-arm64.tar.gz
+sudo ln -sf /opt/nvim/bin/nvim /usr/local/bin/nvim
+nvim --version
+```
+
+**3. tree-sitter CLI.** Parsers are compiled locally, which needs the
+`tree-sitter` binary. Pin v0.25.10 — v0.26+ needs glibc 2.39. On x86-64
+replace `arm64` with `x64`.
+
+```bash
+curl -L https://github.com/tree-sitter/tree-sitter/releases/download/v0.25.10/tree-sitter-linux-arm64.gz \
+  | gunzip | sudo tee /usr/local/bin/tree-sitter > /dev/null
+sudo chmod +x /usr/local/bin/tree-sitter
+tree-sitter --version
+```
+
+On a distro with a newer glibc, `:MasonInstall tree-sitter-cli` from inside
+Neovim does the job instead. Without a working CLI the config still starts — it
+warns once and skips the parser builds.
+
+**4. This config.**
+
+```bash
+[ -e ~/.config/nvim ] && mv ~/.config/nvim ~/.config/nvim.bak
+git clone https://github.com/FranciscoAz1/neovim ~/.config/nvim
+nvim --headless "+Lazy! restore" +qa
+nvim
+```
+
+On Windows the target directory is `%LOCALAPPDATA%\nvim`, and the script does
+not apply.
+
+**5. Formatters.** These are _not_ in the config's auto-install list. Once,
+from inside Neovim:
+
+```vim
+:MasonInstall prettier stylua ruff
+```
+
 ## Layout
 
 ```
 ~/.config/nvim/
   init.lua                   options + keymaps + plugin bootstrap
+  install.sh                 one-command installer (see Installation)
   cheatsheet.md              the <leader>? / prefix ? page — edit it, both views update
   lua/config/options.lua     editor settings, clipboard
   lua/config/keymaps.lua     global keymaps

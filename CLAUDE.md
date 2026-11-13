@@ -21,6 +21,11 @@ There is no build system. Everything runs inside Neovim itself:
 - `:FormatToggle` / `:FormatToggle!` — disable format-on-save globally / for the current buffer (`lua/plugins/format.lua`)
 - `:Cheatsheet` (or `<leader>?`) — open `cheatsheet.md` in a floating window
 
+`install.sh` is the one-command installer (`curl … | bash`) for apt-based systems and Oracle
+Linux 9. Its version pins (Neovim, tree-sitter CLI), package lists and formatter list are repeated
+in `README.md`'s "Manual installation" — change both together. Its whole body runs from `main` on
+the last line so a truncated download can't execute half a script; keep that shape.
+
 `lazy-lock.json` pins exact plugin commits; commit it whenever `:Lazy` changes versions so the Pi
 stays reproducible.
 
